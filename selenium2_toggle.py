@@ -9,18 +9,6 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-expected_shift = 0  #  Начальное ожидаемое смещение (нулевое)
-
-
-def motion_control():  #  Функция сравнения ожидаемого и фактического смещения
-    time.sleep(0.2)
-    global expected_shift
-    expected_shift = expected_shift + direction_sign  #  ожидаем, что смещение на 1 шаг меняет значение слайдера на ±0.5 единиц за шаг
-    fact_position = driver.find_element(By.ID, "range").text  #  фактическое значение слайдера
-    print(expected_shift, '\t', fact_position)
-    assert float(fact_position) == expected_shift, 'Смещение не соответствует ожидаемому'
-
-
 #  Chrome. Создаём переменную для опций браузера
 options = webdriver.ChromeOptions()
 options.add_experimental_option("detach", True)
@@ -40,17 +28,20 @@ print('_'*13,'\nExpect\t|Fact',sep='')  #  Заголовок таблицы
 #  Найдём слайдер
 slider = driver.find_element(By.XPATH, "//input[@type='range']")
 
-#  Передвинем слайдер вправо 10 раз на 1 шаг и проконтролируем смещение
-direction_sign = 0.5  #  Параметр движения вправо, для изменения значения слайдера на 0.5 единиц/шаг
-for _ in range(10):
-    slider.send_keys(Keys.ARROW_RIGHT)
-    motion_control()
+expected_position = 0  #  Зададим нулевое начальное ожидаемое положение ползунка слайдера
 
-#  Передвинем слайдер влево 10 раз на 1 шаг и проконтролируем смещение
-direction_sign = -0.5  #  Параметр движения влево, для изменения значения слайдера на -0.5 единиц/шаг
-for _ in range(10):
-    slider.send_keys(Keys.ARROW_LEFT)
-    motion_control()
+#  Передвинем ползунок слайдера вправо 10 раз на 1 шаг, потом влево 10 раз на 1 шаг с пошаговым контролем положения ползунка слайдера
+for n in range(20):
+    time.sleep(0.2)
+    if n < 10:
+        slider.send_keys(Keys.ARROW_RIGHT)
+        expected_position += 0.5
+    else:
+        slider.send_keys(Keys.ARROW_LEFT)
+        expected_position += - 0.5
+    fact_position = driver.find_element(By.ID, "range").text
+    print(expected_position, '\t', fact_position)
+    assert float(fact_position) == expected_position, 'Смещение не соответствует ожидаемому'
 
 time.sleep(1)
 print('_'*13,'\nСмещения ползунка слайдера внутри диапазона перемещения корректны',sep='')
